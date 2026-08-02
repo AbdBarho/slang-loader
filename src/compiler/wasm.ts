@@ -1,6 +1,5 @@
-import type { SlangWasm } from './wasm-types.js';
-
-const VENDOR_URL = new URL('../vendor/slang-wasm.js', import.meta.url);
+import { VENDOR_URL } from '../vendor.ts';
+import type { SlangWasm } from './types.ts';
 
 type WasmFactory = () => Promise<SlangWasm>;
 

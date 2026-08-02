@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest';
 
-import { loadSlang, SlangCompileError, SLANG_VERSION } from '../src/index.js';
+import { loadSlang, SlangCompileError, SLANG_VERSION } from '../src/index.ts';
 
 const COMPUTE = `
 [shader("compute")]

@@ -1,7 +1,9 @@
 # slang-loader
 
 Compile [Slang](https://shader-slang.org/) shaders to WGSL at build time. Ships the prebuilt
-`slang-wasm` compiler from shader-slang's GitHub releases, with a Vite plugin on top.
+`slang-wasm` compiler from shader-slang's GitHub releases, with an
+[unplugin](https://unplugin.unjs.io/) plugin on top — so it runs under Vite, Rollup, Rolldown,
+webpack, Rspack, Rsbuild, esbuild, Farm, Bun and unloader.
 
 For now, its pinned to **Slang 2026.14.1**.
 
@@ -11,7 +13,13 @@ For now, its pinned to **Slang 2026.14.1**.
 npm install -D slang-loader
 ```
 
-## Vite
+A build-time, Node-only dev dependency: it carries a ~24 MB Slang compiler, so it belongs in your
+build config, never in application code. What reaches the browser is the WGSL string it emits.
+
+## Bundler
+
+Import the entry point matching your bundler; every one takes the same options and behaves the
+same.
 
 ```js
 // vite.config.js
@@ -19,6 +27,38 @@ import slang from 'slang-loader/vite';
 
 export default { plugins: [slang()] };
 ```
+
+<details>
+<summary>Rollup, Rolldown, webpack, Rspack, Rsbuild, esbuild, Farm, Bun, unloader</summary>
+
+```js
+// rollup.config.js — same for slang-loader/rolldown and slang-loader/unloader
+import slang from 'slang-loader/rollup';
+export default { plugins: [slang()] };
+```
+
+```js
+// webpack.config.js — same for slang-loader/rspack
+const slang = require('slang-loader/webpack').default;
+module.exports = { plugins: [slang()] };
+```
+
+```js
+// esbuild — same shape for slang-loader/bun
+import slang from 'slang-loader/esbuild';
+await esbuild.build({ plugins: [slang()] });
+```
+
+```js
+// rsbuild.config.js
+import slang from 'slang-loader/rsbuild';
+export default { plugins: [slang()] };
+```
+
+`slang-loader/unplugin` exports the raw unplugin instance if you need `.raw` or a target not listed
+above.
+
+</details>
 
 ```js
 import wgsl, { entryPoints, reflection } from './scene.slang';
@@ -29,10 +69,15 @@ device.createShaderModule({ code: wgsl });
 ```
 
 A `.slang` module exports the generated WGSL as its default export, plus `entryPoints` and the full
-`reflection` object. Compile errors surface in the Vite overlay pointing at the offending line.
+`reflection` object. Compile errors carry the offending file, line and column, so the host renders
+them in its own error format — the Vite overlay, a webpack build error, and so on.
 
-See [`example/`](./example) for a runnable WebGPU render pipeline — a raymarched scene written in
-Slang, compiled to WGSL by the plugin, drawn fullscreen.
+Both `include` and `exclude` accept anything unplugin's id filters accept (a string glob, a regular
+expression, or an array of either). `include` defaults to `.slang` files, and whatever you pass to
+`exclude` is added to the built-in skip list for `?raw`, `?url`, `?worker` and `?inline` rather than
+replacing it.
+
+See [`example/`](./example) for a runnable WebGPU render pipeline.
 
 ## Programmatic
 
@@ -56,20 +101,25 @@ const { code, entryPoints, reflection, diagnostics } = slang.compile(source, {
 - **No typegen.** `reflection` is returned but nothing consumes it yet; generating typed uniform
   structs from it — so that a GPU-side rename becomes a compile error on the CPU side — is the
   planned next step, and the reason `reflection` is in the return shape already.
-- **Vite only.** The core API is bundler-agnostic; other bundlers come once it has proven itself.
+- **Only Vite is exercised.** Every unplugin target is built and exported, but Vite is the one with
+  an example and the one the tests drive end to end.
+- **No automatic teardown outside the Rollup family.** Vite, Rollup, Rolldown and unloader dispose
+  the compiler on `closeBundle`. The others have no once-per-run hook that a watch rebuild does not
+  also fire, so the compiler lives until the process exits — call `disposeSlang()` yourself if you
+  are running builds inside a long-lived process.
 
 ## Development
 
 ```sh
 npm install
 npm run fetch-wasm   # downloads and checksums the pinned artifact into vendor/
-npm test             # vitest, against src/
+npm test             # vitest, against src/ (plus dist/, once built)
 npm run build        # tsdown → dist/
 ```
 
 ## Bumping Slang
 
-`SLANG_VERSION` and `SLANG_WASM_SHA256` in [`src/slang-version.ts`](./src/slang-version.ts) are the
+`SLANG_VERSION` and `SLANG_WASM_SHA256` in [`src/compiler/version.ts`](./src/compiler/version.ts) are the
 only things to change, then `npm run fetch-wasm`.
 
 ## Licence

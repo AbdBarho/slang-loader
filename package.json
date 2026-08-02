@@ -1,13 +1,19 @@
 {
   "name": "slang-loader",
   "version": "0.0.1",
-  "description": "Compile Slang shaders to WGSL at build time, with a Vite plugin.",
+  "description": "Compile Slang shaders to WGSL at build time, for Vite, webpack, Rollup, esbuild and more.",
   "author": "Abdullah Barhoum",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbdBarho/slang-loader.git"
+  },
+  "homepage": "https://github.com/AbdBarho/slang-loader#readme",
+  "bugs": "https://github.com/AbdBarho/slang-loader/issues",
   "type": "module",
   "sideEffects": false,
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=22.18.0"
   },
   "prettier": {
     "printWidth": 120,
@@ -17,13 +23,51 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
-      "node": "./dist/index.mjs",
-      "default": "./dist/browser.mjs"
+      "default": "./dist/index.mjs"
+    },
+    "./unplugin": {
+      "types": "./dist/unplugin.d.mts",
+      "default": "./dist/unplugin.mjs"
     },
     "./vite": {
       "types": "./dist/vite.d.mts",
-      "node": "./dist/vite.mjs",
-      "default": "./dist/browser.mjs"
+      "default": "./dist/vite.mjs"
+    },
+    "./rollup": {
+      "types": "./dist/rollup.d.mts",
+      "default": "./dist/rollup.mjs"
+    },
+    "./rolldown": {
+      "types": "./dist/rolldown.d.mts",
+      "default": "./dist/rolldown.mjs"
+    },
+    "./webpack": {
+      "types": "./dist/webpack.d.mts",
+      "default": "./dist/webpack.mjs"
+    },
+    "./rspack": {
+      "types": "./dist/rspack.d.mts",
+      "default": "./dist/rspack.mjs"
+    },
+    "./rsbuild": {
+      "types": "./dist/rsbuild.d.mts",
+      "default": "./dist/rsbuild.mjs"
+    },
+    "./esbuild": {
+      "types": "./dist/esbuild.d.mts",
+      "default": "./dist/esbuild.mjs"
+    },
+    "./farm": {
+      "types": "./dist/farm.d.mts",
+      "default": "./dist/farm.mjs"
+    },
+    "./bun": {
+      "types": "./dist/bun.d.mts",
+      "default": "./dist/bun.mjs"
+    },
+    "./unloader": {
+      "types": "./dist/unloader.d.mts",
+      "default": "./dist/unloader.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -42,14 +86,6 @@
     "test:watch": "vitest",
     "prepublishOnly": "npm run fetch-wasm && npm run build && npm test"
   },
-  "peerDependencies": {
-    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
-  },
-  "peerDependenciesMeta": {
-    "vite": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@types/node": "^26.1.2",
     "fflate": "^0.8.3",
@@ -63,6 +99,14 @@
     "wgsl",
     "webgpu",
     "shader",
-    "vite-plugin"
-  ]
+    "unplugin",
+    "vite-plugin",
+    "webpack-plugin",
+    "rollup-plugin",
+    "esbuild-plugin",
+    "rspack-plugin"
+  ],
+  "dependencies": {
+    "unplugin": "^3.3.0"
+  }
 }

@@ -38,6 +38,6 @@ export function parseDiagnostics(text: string): Diagnostic[] {
   return diagnostics;
 }
 
-export function firstErrorLocation(diagnostics: Diagnostic[]): Diagnostic | undefined {
-  return diagnostics.find(d => d.severity === 'error' && d.line !== null);
+export function firstErrorLocation(diagnostics: Diagnostic[]): (Diagnostic & { line: number }) | undefined {
+  return diagnostics.find((d): d is Diagnostic & { line: number } => d.severity === 'error' && d.line !== null);
 }

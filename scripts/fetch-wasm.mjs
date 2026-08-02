@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { unzipSync } from 'fflate';
 
-import { SLANG_VERSION as version, SLANG_WASM_SHA256 as sha256 } from '../src/slang-version.ts';
+import { SLANG_VERSION as version, SLANG_WASM_SHA256 as sha256 } from '../src/compiler/version.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -23,7 +23,7 @@ const digest = createHash('sha256').update(zip).digest('hex');
 if (digest !== sha256) {
   throw new Error(
     `Checksum mismatch for ${zipName}.\n  expected ${sha256}\n  actual   ${digest}\n` +
-      `Either the release asset changed, or SLANG_WASM_SHA256 in src/slang-version.ts is stale.`,
+      `Either the release asset changed, or SLANG_WASM_SHA256 in src/compiler/version.ts is stale.`,
   );
 }
 
