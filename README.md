@@ -1,11 +1,11 @@
 # slang-loader
 
-Compile [Slang](https://shader-slang.org/) shaders to WGSL at build time. Ships the prebuilt
-`slang-wasm` compiler from shader-slang's GitHub releases, with an
-[unplugin](https://unplugin.unjs.io/) plugin on top — so it runs under Vite, Rollup, Rolldown,
-webpack, Rspack, Rsbuild, esbuild, Farm, Bun and unloader.
+[![CI](https://github.com/AbdBarho/slang-loader/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdBarho/slang-loader/actions/workflows/ci.yml)
 
-For now, its pinned to **Slang 2026.14.1**.
+Compile [Slang](https://shader-slang.org/) shaders to WGSL at build time. It runs under Vite, Rollup,
+Rolldown, webpack, Rspack, Rsbuild, esbuild, Farm, Bun and unloader.
+
+For now, it's pinned to **Slang 2026.14.1**.
 
 ## Install
 
@@ -13,13 +13,9 @@ For now, its pinned to **Slang 2026.14.1**.
 npm install -D slang-loader
 ```
 
-A build-time, Node-only dev dependency: it carries a ~24 MB Slang compiler, so it belongs in your
-build config, never in application code. What reaches the browser is the WGSL string it emits.
-
 ## Bundler
 
-Import the entry point matching your bundler; every one takes the same options and behaves the
-same.
+Import the entry point matching your bundler; every one takes the same options and behaves the same.
 
 ```js
 // vite.config.js
@@ -95,14 +91,11 @@ const { code, entryPoints, reflection, diagnostics } = slang.compile(source, {
 
 ## v0 limits
 
-- **WGSL only.** No SPIR-V, MSL, GLSL.
 - **Single-file shaders.** `import` of sibling `.slang` files is not resolved yet, so there is no
   dependency tracking and no HMR beyond the edited file itself.
 - **No typegen.** `reflection` is returned but nothing consumes it yet; generating typed uniform
   structs from it — so that a GPU-side rename becomes a compile error on the CPU side — is the
   planned next step, and the reason `reflection` is in the return shape already.
-- **Only Vite is exercised.** Every unplugin target is built and exported, but Vite is the one with
-  an example and the one the tests drive end to end.
 - **No automatic teardown outside the Rollup family.** Vite, Rollup, Rolldown and unloader dispose
   the compiler on `closeBundle`. The others have no once-per-run hook that a watch rebuild does not
   also fire, so the compiler lives until the process exits — call `disposeSlang()` yourself if you

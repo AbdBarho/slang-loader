@@ -1,6 +1,6 @@
 {
   "name": "slang-loader",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Compile Slang shaders to WGSL at build time, for Vite, webpack, Rollup, esbuild and more.",
   "author": "Abdullah Barhoum",
   "license": "MIT",
