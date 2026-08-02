@@ -1,0 +1,13 @@
+{
+  "name": "slang-loader-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "slang-loader": "file:..",
+    "vite": "^8.0.0"
+  }
+}

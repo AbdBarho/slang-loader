@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>slang-loader example</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #0b0d12;
+        font:
+          18px/1.6 ui-monospace,
+          monospace;
+        color: #eef2ff;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      #out {
+        position: fixed;
+        left: 1rem;
+        bottom: 1rem;
+        margin: 0;
+        padding: 0.6rem 0.9rem;
+        border-radius: 6px;
+        background: rgb(4 6 12 / 65%);
+        border: 1px solid rgb(255 255 255 / 10%);
+        backdrop-filter: blur(6px);
+        white-space: pre-wrap;
+        pointer-events: none;
+      }
+      #out:empty {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <pre id="out"></pre>
+    <script type="module">
+      import wgsl, { entryPoints } from './scene.slang';
+
+      const out = document.querySelector('#out');
+      const canvas = document.querySelector('#canvas');
+
+      function print(text) {
+        out.textContent += `${text}\n`;
+      }
+
+      if (!navigator.gpu) {
+        print('WebGPU is not available in this browser.');
+      } else {
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice();
+
+        const context = canvas.getContext('webgpu');
+        const format = navigator.gpu.getPreferredCanvasFormat();
+        context.configure({ device, format, alphaMode: 'opaque' });
+
+        const module = device.createShaderModule({ code: wgsl });
+
+        // Entry point names come from Slang's reflection rather than being typed out a second time.
+        const stage = name => entryPoints.find(e => e.stage === name).name;
+
+        const pipeline = device.createRenderPipeline({
+          layout: 'auto',
+          vertex: { module, entryPoint: stage('vertex') },
+          fragment: { module, entryPoint: stage('fragment'), targets: [{ format }] },
+        });
+
+        const uniforms = new Float32Array(4);
+        const uniformBuffer = device.createBuffer({
+          size: uniforms.byteLength,
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        const bindGroup = device.createBindGroup({
+          layout: pipeline.getBindGroupLayout(0),
+          entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+        });
+
+        function resize() {
+          const dpr = Math.min(devicePixelRatio, 2);
+          canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
+          canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
+        }
+        addEventListener('resize', resize);
+        resize();
+
+        const start = performance.now();
+
+        function frame() {
+          uniforms[0] = canvas.width;
+          uniforms[1] = canvas.height;
+          uniforms[2] = (performance.now() - start) / 1000;
+          device.queue.writeBuffer(uniformBuffer, 0, uniforms);
+
+          const encoder = device.createCommandEncoder();
+          const pass = encoder.beginRenderPass({
+            colorAttachments: [
+              {
+                view: context.getCurrentTexture().createView(),
+                loadOp: 'clear',
+                storeOp: 'store',
+                clearValue: { r: 0, g: 0, b: 0, a: 1 },
+              },
+            ],
+          });
+          pass.setPipeline(pipeline);
+          pass.setBindGroup(0, bindGroup);
+          pass.draw(3);
+          pass.end();
+          device.queue.submit([encoder.finish()]);
+
+          requestAnimationFrame(frame);
+        }
+
+        requestAnimationFrame(frame);
+        print('a raymarched scene, written in Slang, compiled to WGSL at build time');
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+{
+  "name": "slang-loader",
+  "version": "0.0.1",
+  "description": "Compile Slang shaders to WGSL at build time, with a Vite plugin.",
+  "author": "Abdullah Barhoum",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true,
+    "arrowParens": "avoid"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "node": "./dist/index.mjs",
+      "default": "./dist/browser.mjs"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.mts",
+      "node": "./dist/vite.mjs",
+      "default": "./dist/browser.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "vendor",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "fetch-wasm": "node scripts/fetch-wasm.mjs",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run fetch-wasm && npm run build && npm test"
+  },
+  "peerDependencies": {
+    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "fflate": "^0.8.3",
+    "prettier": "^3.9.6",
+    "tsdown": "^0.22.14",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "keywords": [
+    "slang",
+    "wgsl",
+    "webgpu",
+    "shader",
+    "vite-plugin"
+  ]
+}
