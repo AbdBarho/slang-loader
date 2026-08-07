@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { test, expect } from 'vitest';
 
 import { slangFactory, type SlangPluginOptions } from '../src/plugin.ts';
@@ -18,15 +20,22 @@ interface TransformHook {
 
 function context() {
   const errors: CapturedError[] = [];
+  const watched: string[] = [];
   return {
     errors,
+    watched,
     error(error: CapturedError) {
       errors.push(error);
+    },
+    addWatchFile(id: string) {
+      watched.push(id);
     },
   };
 }
 
 const COMPUTE = compute(16);
+
+const FIXTURES = fileURLToPath(new URL('./fixtures/', import.meta.url)).replace(/\\/g, '/');
 
 function transformOf(options?: SlangPluginOptions): TransformHook {
   return slangFactory(options).transform as unknown as TransformHook;
@@ -77,6 +86,24 @@ test('reports a compile error the host can locate and frame', async () => {
     id: '/src/broken.slang',
     loc: { file: '/src/broken.slang', line: 1, column: 9 },
   });
+});
+
+test('registers imported shaders as watch files', async () => {
+  const ctx = context();
+  const entry = `import util;\n[shader("compute")][numthreads(2,1,1)]\nvoid main(uint3 t : SV_DispatchThreadID, uniform RWStructuredBuffer<float> o) { o[t.x] = scaleBy(1.0); }`;
+
+  const result = await transformOf().handler.call(ctx, entry, `${FIXTURES}entry.slang`);
+
+  expect(result?.code).toMatch(/\* 21\.0f/);
+  expect(ctx.watched).toEqual([`${FIXTURES}util.slang`]);
+});
+
+test('watches nothing extra for a single-file shader', async () => {
+  const ctx = context();
+
+  await transformOf().handler.call(ctx, COMPUTE, `${FIXTURES}solo.slang`);
+
+  expect(ctx.watched).toEqual([]);
 });
 
 test('every supported bundler gets a plugin from the same factory', () => {

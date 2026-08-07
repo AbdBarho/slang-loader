@@ -27,17 +27,23 @@ export function slangFactory(options: SlangPluginOptions = {}): UnpluginOptions 
 
       async handler(source, id) {
         const [path = ''] = id.split('?');
+        let dependencies: readonly string[] = [];
 
-        let result: CompileResult;
         try {
           const slang = await loadSlang();
-          result = slang.compile(source, { path });
-        } catch (error) {
-          if (error instanceof SlangCompileError) this.error(toMessage(error, path));
-          throw error;
-        }
+          const result: CompileResult = slang.compile(source, { path });
+          dependencies = result.dependencies;
 
-        return { code: emitModule(result), map: null };
+          return { code: emitModule(result), map: null };
+        } catch (error) {
+          if (error instanceof SlangCompileError) {
+            dependencies = error.dependencies;
+            this.error(toMessage(error, path));
+          }
+          throw error;
+        } finally {
+          for (const dependency of dependencies) this.addWatchFile(dependency);
+        }
       },
     },
 
@@ -64,6 +70,6 @@ function toMessage(error: SlangCompileError, path: string): UnpluginMessage {
     message: error.message,
     id: path,
     plugin: 'slang-loader',
-    ...(location ? { loc: { file: path, line: location.line, column: location.column ?? 1 } } : {}),
+    ...(location ? { loc: { file: location.file ?? path, line: location.line, column: location.column ?? 1 } } : {}),
   };
 }

@@ -43,7 +43,14 @@ export interface GlobalSession extends Handle {
   createSession(compileTarget: number): Session | null;
 }
 
+export interface EmscriptenFS {
+  mkdirTree(path: string): void;
+  writeFile(path: string, data: string): void;
+  unlink(path: string): void;
+}
+
 export interface SlangWasm {
+  FS: EmscriptenFS;
   getVersionString(): string;
   getCompileTargets(): CompileTarget[];
   getLastError(): SlangError;

@@ -56,6 +56,8 @@ above.
 
 </details>
 
+## Usage
+
 ```js
 import wgsl, { entryPoints, reflection } from './scene.slang';
 
@@ -75,24 +77,56 @@ replacing it.
 
 See [`example/`](./example) for a runnable WebGPU render pipeline.
 
+## Multi-file shaders
+
+`import`, `__include` and `#include` all resolve against the filesystem, so a shader can be split
+across files:
+
+```hlsl
+// scene.slang
+import scene.sdf;                 // → scene/sdf.slang
+
+// scene/sdf.slang
+public float smoothUnion(float a, float b, float k) { /* … */ }
+```
+
+Resolution follows Slang's own rules — **relative to the importing file**, with `.` becoming a
+directory separator and `_` becoming `-`, so `import lib.color_grade;` finds `lib/color-grade.slang`.
+Quoted forms (`import "shared/util.slang";`, `#include "common.slang"`) work too.
+
+Two things to know:
+
+- **`import` crosses a module boundary, so symbols must be `public`.** Slang's legacy mode makes
+  everything public in a file that has no `module` declaration, no `__include` and no visibility
+  modifiers — which is why plain sibling files often import with no annotation — but upstream flags
+  that mode for eventual deprecation, so prefer marking exports `public`. Use `__include` (with
+  `module` / `implementing` declarations) when the files are really one module rather than a library.
+- **No `-I` search paths.** The wasm build does not expose them, so every reference has to resolve
+  relative to the file that makes it.
+
+Imported files are registered with the bundler, so editing a dependency rebuilds the shaders that
+use it. That works on Vite, Rollup, Rolldown, webpack, Rspack, Rsbuild and Farm; Bun's unplugin
+target discards watch files, so dependency edits are missed there.
+
 ## Programmatic
 
 ```js
 import { loadSlang } from 'slang-loader';
 
 const slang = await loadSlang();
-const { code, entryPoints, reflection, diagnostics } = slang.compile(source, {
+const { code, entryPoints, reflection, diagnostics, dependencies } = slang.compile(source, {
   path: '/blur.slang',
 });
 ```
+
+`path` is what imports resolve against, and `dependencies` lists the files that were pulled in. Pass
+`readFile` to resolve them from somewhere other than disk.
 
 `loadSlang()` boots the wasm once and caches it for the lifetime of the process; every subsequent
 `compile()` reuses the same `GlobalSession`. Compilation itself is a few milliseconds.
 
 ## v0 limits
 
-- **Single-file shaders.** `import` of sibling `.slang` files is not resolved yet, so there is no
-  dependency tracking and no HMR beyond the edited file itself.
 - **No typegen.** `reflection` is returned but nothing consumes it yet; generating typed uniform
   structs from it — so that a GPU-side rename becomes a compile error on the CPU side — is the
   planned next step, and the reason `reflection` is in the return shape already.
