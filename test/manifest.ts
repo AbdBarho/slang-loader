@@ -2,13 +2,14 @@ import { readFile } from 'node:fs/promises';
 
 export interface Manifest {
   description: string;
+  types: string;
   exports: Record<string, Record<string, string> | string>;
   files: string[];
 }
 
 export const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')) as Manifest;
 
-const NOT_A_BUNDLER = ['.', './unplugin', './package.json'];
+const NOT_A_BUNDLER = ['.', './unplugin', './module', './package.json'];
 
 export const BUNDLERS = Object.keys(pkg.exports)
   .filter(name => !NOT_A_BUNDLER.includes(name))

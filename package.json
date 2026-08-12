@@ -1,6 +1,6 @@
 {
   "name": "slang-loader",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Compile Slang shaders to WGSL at build time, for Vite, webpack, Rollup, esbuild and more.",
   "author": "Abdullah Barhoum",
   "license": "MIT",
@@ -20,10 +20,14 @@
     "singleQuote": true,
     "arrowParens": "avoid"
   },
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./module": {
+      "types": "./module.d.ts"
     },
     "./unplugin": {
       "types": "./dist/unplugin.d.mts",
@@ -74,6 +78,7 @@
   "files": [
     "dist",
     "vendor",
+    "module.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -87,7 +92,7 @@
     "prepublishOnly": "npm run fetch-wasm && npm run build && npm test"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "fflate": "^0.8.3",
     "prettier": "^3.9.6",
     "tsdown": "^0.22.14",

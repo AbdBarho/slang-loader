@@ -5,15 +5,30 @@ import { fileURLToPath } from 'node:url';
 
 import { BUNDLERS, pkg } from './manifest.ts';
 
+const MODULE = './module';
+
 test('every entry point resolves into dist', () => {
   for (const [name, entry] of Object.entries(pkg.exports)) {
-    if (name === './package.json') continue;
+    if (name === './package.json' || name === MODULE) continue;
 
     expect(typeof entry, name).toBe('object');
     const conditions = entry as Record<string, string>;
     expect(conditions.types, `${name} must ship types`).toMatch(/^\.\/dist\/.+\.d\.mts$/);
     expect(conditions.default, `${name} must resolve to an esm build`).toMatch(/^\.\/dist\/.+\.mjs$/);
   }
+});
+
+test('the shader module contract is a types-only entry, since it has no runtime half', () => {
+  const entry = pkg.exports[MODULE] as Record<string, string>;
+
+  expect(entry.types).toBe('./module.d.ts');
+  expect(entry.default).toBeUndefined();
+  expect(pkg.files).toContain('module.d.ts');
+  expect(pkg.exports['./client']).toBeUndefined();
+});
+
+test('resolvers that ignore the exports map still find the package types', () => {
+  expect(pkg.types).toBe('./dist/index.d.mts');
 });
 
 test('every bundler entry module is exported, and every exported bundler has a module', async () => {
