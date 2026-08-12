@@ -21,6 +21,8 @@ async function entryPoints(source = SHADER, path = '/scene.slang'): Promise<Slan
   return slang.compile(source, { path }).entryPoints;
 }
 
+const EMPTY_REFLECTION = { entryPoints: [], parameters: [] };
+
 function consumer(sidecar: string, index: string): Record<string, string> {
   return {
     'package.json': JSON.stringify({ name: 'consumer', private: true, type: 'module' }),
@@ -41,7 +43,7 @@ function consumer(sidecar: string, index: string): Record<string, string> {
 }
 
 test('emits a declaration that typechecks and keeps entry point names literal', async () => {
-  const sidecar = emitDeclaration(await entryPoints());
+  const sidecar = emitDeclaration(await entryPoints(), EMPTY_REFLECTION);
 
   const index = `import code, { entryPoints, reflection } from './scene.slang';
 const wgsl: string = code;
@@ -55,15 +57,27 @@ const reflected: unknown = reflection;
   expect(typecheck(consumer(sidecar, index))).toEqual([]);
 });
 
+test('emits the concrete reflection type', async () => {
+  const slang = await loadSlang();
+  const result = slang.compile(SHADER, { path: '/scene.slang' });
+  const sidecar = emitDeclaration(result.entryPoints, result.reflection);
+  const index = `import { reflection } from './scene.slang';
+const parameter: 'params' = reflection.parameters[0].name;
+const scalar: 'float32' = reflection.parameters[0].type.elementType.fields[0].type.scalarType;
+`;
+
+  expect(typecheck(consumer(sidecar, index))).toEqual([]);
+});
+
 test('the round trip really is checking, not just resolving', async () => {
-  const sidecar = emitDeclaration(await entryPoints());
+  const sidecar = emitDeclaration(await entryPoints(), EMPTY_REFLECTION);
   const index = `import { entryPoints } from './scene.slang';\nconst name: 'nope' = entryPoints[0].name;\n`;
 
   expect(codes(typecheck(consumer(sidecar, index)))).toContain('TS2322');
 });
 
 test('marks the file so cleanup can tell it apart from a hand-written one', async () => {
-  const sidecar = emitDeclaration(await entryPoints());
+  const sidecar = emitDeclaration(await entryPoints(), EMPTY_REFLECTION);
 
   expect(sidecar.startsWith(MARKER)).toBe(true);
 });
@@ -71,11 +85,16 @@ test('marks the file so cleanup can tell it apart from a hand-written one', asyn
 test('is byte-deterministic, so an unchanged shader never rewrites its sidecar', async () => {
   const entries = await entryPoints();
 
-  expect(emitDeclaration(entries)).toBe(emitDeclaration(structuredClone(entries)));
+  expect(emitDeclaration(entries, EMPTY_REFLECTION)).toBe(
+    emitDeclaration(structuredClone(entries), structuredClone(EMPTY_REFLECTION)),
+  );
 });
 
 test('escapes entry point names using JSON string syntax', () => {
-  const sidecar = emitDeclaration([{ name: 'line\nbreak"quoted"', stage: 'compute', workgroupSize: null }]);
+  const sidecar = emitDeclaration(
+    [{ name: 'line\nbreak"quoted"', stage: 'compute', workgroupSize: null }],
+    EMPTY_REFLECTION,
+  );
   const index = `import code from './scene.slang';\nconst wgsl: string = code;\n`;
 
   expect(typecheck(consumer(sidecar, index))).toEqual([]);
@@ -84,5 +103,5 @@ test('escapes entry point names using JSON string syntax', () => {
 test('a shader with no entry points still produces a usable declaration', () => {
   const index = `import code from './scene.slang';\nconst wgsl: string = code;\n`;
 
-  expect(typecheck(consumer(emitDeclaration([]), index))).toEqual([]);
+  expect(typecheck(consumer(emitDeclaration([], EMPTY_REFLECTION), index))).toEqual([]);
 });

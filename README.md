@@ -1,6 +1,7 @@
 # slang-loader
 
 [![CI](https://github.com/AbdBarho/slang-loader/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdBarho/slang-loader/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/slang-loader)](https://www.npmjs.com/package/slang-loader)
 
 Compile [Slang](https://shader-slang.org/) shaders to WGSL at build time. Supports Vite, Rollup,
 Rolldown, webpack, Rspack, Rsbuild, esbuild, Farm, Bun and unloader.
@@ -59,8 +60,8 @@ Custom `include` extensions are compiled but do not generate sidecars. The plugi
 
 ## TypeScript
 
-Successful builds generate `*.slang.d.ts` sidecars with literal entry point names and workgroup
-sizes. These files can be gitignored with `*.slang.d.ts`:
+Successful builds generate `*.slang.d.ts` sidecars with literal entry point names, workgroup sizes
+and the full reflection type:
 
 ```ts
 import { entryPoints } from './scene.slang';
@@ -68,6 +69,15 @@ import { entryPoints } from './scene.slang';
 entryPoints[0].name; // "computeMain"
 entryPoints[0].workgroupSize; // [16, 16, 1]
 ```
+
+Ignore generated sidecars when formatting:
+
+- `.prettierignore`: `*.slang.d.ts` to skip formatting
+
+Then choose one:
+
+- `.gitignore`: `*.slang.d.ts` if sidecars are not committed
+- `.gitattributes`: `*.slang.d.ts linguist-generated` if sidecars are committed
 
 For files that have not been compiled yet, or when using `moduleResolution: nodenext`, add a fallback
 to an environment declaration file such as `vite-env.d.ts`:

@@ -104,7 +104,8 @@ every version bump because Slang releases frequently and WGSL code generation is
 ## Type Generation
 
 Each successful writable shader compile generates `<shader>.d.ts` with a literal tuple describing
-entry point names, stages and workgroup sizes. Reflection remains `unknown` in declarations.
+entry point names, stages and workgroup sizes, plus the full JSON reflection as a literal TypeScript
+type. JSON syntax is valid in a TypeScript type position, so no separate reflection schema is needed.
 
 `module.d.ts` supplies a generic module contract without choosing ambient extension patterns for the
 consumer. A consumer declaration re-exports its default explicitly and its named exports with
