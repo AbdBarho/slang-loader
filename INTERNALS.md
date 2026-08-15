@@ -14,10 +14,10 @@ optional bundler types according to the local install tree.
 
 `src/vendor.ts` is the only module that locates the artifact. Its literal
 `new URL('../vendor/slang-wasm.js', import.meta.url)` must resolve from both `src/` during source tests
-and a root-level `dist/` chunk after building. Keep the file at `src/` root. `test/dist.test.ts`
+and a root-level `dist/` chunk after building. Keep the file at `src/` root. `src/dist.test.ts`
 checks the built-package half of this constraint.
 
-Vitest normally runs against `src/`; `test/dist.test.ts` runs against a prior build. `npm run
+Vitest normally runs against `src/`; `src/dist.test.ts` runs against a prior build. `npm run
 fetch-wasm` downloads the pinned, gitignored artifact into `vendor/`.
 
 ## Invariants
@@ -107,7 +107,7 @@ Each successful writable shader compile generates `<shader>.d.ts` with a literal
 entry point names, stages and workgroup sizes, plus the full JSON reflection as a literal TypeScript
 type. JSON syntax is valid in a TypeScript type position, so no separate reflection schema is needed.
 
-`module.d.ts` supplies a generic module contract without choosing ambient extension patterns for the
+`src/module.d.ts` supplies a generic module contract without choosing ambient extension patterns for the
 consumer. A consumer declaration re-exports its default explicitly and its named exports with
 `export *`; a real sidecar wins under `moduleResolution: bundler`, while `nodenext` falls back to the
 ambient declaration. Pattern ambient modules allow one `*`, so query forms need separate patterns

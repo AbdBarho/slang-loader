@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { codes, typecheck } from './tsc.ts';
+import { codes, typecheck } from './test-tsc.ts';
 
 // Pins TypeScript resolution behaviour the handbook does not contract; the sidecar scheme rests on it.
 
@@ -74,10 +74,10 @@ function project({ mode, index, sidecar = false, fallback = false, lib }: Layout
       types: './dist/index.d.mts',
       exports: {
         '.': { types: './dist/index.d.mts', default: './dist/index.mjs' },
-        './module': { types: './module.d.ts' },
+        './module': { types: './src/module.d.ts' },
       },
     }),
-    'node_modules/slang-loader/module.d.ts': MODULE,
+    'node_modules/slang-loader/src/module.d.ts': MODULE,
     'node_modules/slang-loader/dist/index.d.mts': INDEX,
   };
 

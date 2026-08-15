@@ -27,7 +27,7 @@
       "default": "./dist/index.mjs"
     },
     "./module": {
-      "types": "./module.d.ts"
+      "types": "./src/module.d.ts"
     },
     "./unplugin": {
       "types": "./dist/unplugin.d.mts",
@@ -78,7 +78,7 @@
   "files": [
     "dist",
     "vendor",
-    "module.d.ts",
+    "src/module.d.ts",
     "README.md",
     "LICENSE"
   ],

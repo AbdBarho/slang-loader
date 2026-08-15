@@ -5,10 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, test, expect } from 'vitest';
 
-import { MARKER } from '../src/typegen.ts';
-import { slangFactory, type SlangPluginOptions } from '../src/plugin.ts';
-import { slang } from '../src/unplugin.ts';
-import { APPLY_ONLY, BUNDLERS, NOT_CONSTRUCTIBLE_UNDER_NODE, compute } from './manifest.ts';
+import { APPLY_ONLY, BUNDLERS, NOT_CONSTRUCTIBLE_UNDER_NODE, compute } from './test-manifest.ts';
+import { slangFactory, type SlangPluginOptions } from './plugin.ts';
+import { MARKER } from './typegen.ts';
+import { slang } from './unplugin.ts';
 
 interface CapturedError {
   message: string;

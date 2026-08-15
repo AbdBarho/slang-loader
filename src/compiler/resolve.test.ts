@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest';
 
-import { loadSlang, SlangCompileError } from '../src/index.ts';
+import { loadSlang, SlangCompileError } from '../index.ts';
 
 function reader(files: Record<string, string>) {
   return (path: string) => files[path] ?? null;

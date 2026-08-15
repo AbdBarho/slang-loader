@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 
-import { APPLY_ONLY, BUNDLERS, NOT_CONSTRUCTIBLE_UNDER_NODE, compute, pkg } from './manifest.ts';
+import { APPLY_ONLY, BUNDLERS, NOT_CONSTRUCTIBLE_UNDER_NODE, compute, pkg } from './test-manifest.ts';
 
 const DIST = new URL('../dist/', import.meta.url);
 const built = existsSync(DIST);
@@ -13,7 +13,7 @@ describe.skipIf(!built)('the built package', () => {
     for (const [name, entry] of Object.entries(pkg.exports)) {
       if (typeof entry === 'string') continue;
       for (const [condition, file] of Object.entries(entry)) {
-        expect(existsSync(new URL(file, new URL('../', DIST))), `${name} → ${condition}`).toBe(true);
+        expect(existsSync(new URL(file, new URL('../', import.meta.url))), `${name} → ${condition}`).toBe(true);
       }
     }
   });

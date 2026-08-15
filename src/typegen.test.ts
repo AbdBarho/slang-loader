@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 
-import { loadSlang, type SlangEntryPoint } from '../src/index.ts';
-import { emitDeclaration, MARKER } from '../src/typegen.ts';
-import { codes, typecheck } from './tsc.ts';
+import { codes, typecheck } from './test-tsc.ts';
+import { loadSlang, type SlangEntryPoint } from './index.ts';
+import { emitDeclaration, MARKER } from './typegen.ts';
 
 const SHADER = `
 struct Params { float time; float2 resolution; };

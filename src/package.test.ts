@@ -3,7 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { BUNDLERS, pkg } from './manifest.ts';
+import { BUNDLERS, pkg } from './test-manifest.ts';
 
 const MODULE = './module';
 
@@ -21,9 +21,9 @@ test('every entry point resolves into dist', () => {
 test('the shader module contract is a types-only entry, since it has no runtime half', () => {
   const entry = pkg.exports[MODULE] as Record<string, string>;
 
-  expect(entry.types).toBe('./module.d.ts');
+  expect(entry.types).toBe('./src/module.d.ts');
   expect(entry.default).toBeUndefined();
-  expect(pkg.files).toContain('module.d.ts');
+  expect(pkg.files).toContain('src/module.d.ts');
   expect(pkg.exports['./client']).toBeUndefined();
 });
 
@@ -32,18 +32,18 @@ test('resolvers that ignore the exports map still find the package types', () =>
 });
 
 test('every bundler entry module is exported, and every exported bundler has a module', async () => {
-  const modules = (await readdir(new URL('../src/bundlers/', import.meta.url))).map(name => name.replace(/\.ts$/, ''));
+  const modules = (await readdir(new URL('./bundlers/', import.meta.url))).map(name => name.replace(/\.ts$/, ''));
 
   expect(BUNDLERS.slice().sort()).toEqual(modules.sort());
 });
 
 test('the wasm artifact is reachable from exactly one module', async () => {
-  const root = fileURLToPath(new URL('../src/', import.meta.url));
+  const root = fileURLToPath(new URL('./', import.meta.url));
   const entries = await readdir(root, { recursive: true, withFileTypes: true });
 
   const reaching = await Promise.all(
     entries
-      .filter(entry => entry.isFile())
+      .filter(entry => entry.isFile() && !entry.name.endsWith('.test.ts') && !entry.name.startsWith('test-'))
       .map(async entry => {
         const source = await readFile(join(entry.parentPath, entry.name), 'utf8');
         return source.includes('slang-wasm.js') ? entry.name : null;

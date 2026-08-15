@@ -42,6 +42,6 @@ jobs:
       - if: steps.wasm.outputs.cache-hit != 'true'
         run: npm run fetch-wasm
 
-      # Before the tests, so test/dist.test.ts runs instead of skipping itself.
+      # Before the tests, so src/dist.test.ts runs instead of skipping itself.
       - run: npm run build
       - run: npm test
