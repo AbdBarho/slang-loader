@@ -38,16 +38,17 @@
     <canvas id="canvas"></canvas>
     <pre id="out"></pre>
     <script type="module">
-      import wgsl, { entryPoints } from './scene.slang';
+      import wgsl, { entryPoints, reflection } from './src/scene.slang';
 
       const canvas = document.querySelector('#canvas');
       const out = document.querySelector('#out');
 
-      function resize() {
-        const dpr = Math.min(devicePixelRatio, 2);
-        canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
-        canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
-      }
+      const entry = stage => entryPoints.find(e => e.stage === stage);
+      const binding = name => reflection.parameters.find(p => p.name === name).binding.index;
+      const globals = reflection.globalScope;
+      const uniforms = globals.parameters.filter(p => p.binding.kind === 'uniform');
+      const uniform = name => uniforms.find(p => p.name === name).binding;
+      const globalsSize = Math.ceil(Math.max(...uniforms.map(p => p.binding.offset + p.binding.size)) / 16) * 16;
 
       async function main() {
         const adapter = await navigator.gpu?.requestAdapter();
@@ -62,46 +63,89 @@
         context.configure({ device, format, alphaMode: 'opaque' });
 
         const module = device.createShaderModule({ code: wgsl });
-        const stage = name => entryPoints.find(e => e.stage === name).name;
-
-        const pipeline = device.createRenderPipeline({
+        const render = device.createComputePipeline({
           layout: 'auto',
-          vertex: { module, entryPoint: stage('vertex') },
-          fragment: { module, entryPoint: stage('fragment'), targets: [{ format }] },
+          compute: { module, entryPoint: entry('compute').name },
+        });
+        const present = device.createRenderPipeline({
+          layout: 'auto',
+          vertex: { module, entryPoint: entry('vertex').name },
+          fragment: { module, entryPoint: entry('fragment').name, targets: [{ format }] },
         });
 
-        const uniforms = new Float32Array(4);
-        const uniformBuffer = device.createBuffer({
-          size: uniforms.byteLength,
+        const globalsData = new ArrayBuffer(globalsSize);
+        const resolution = new Float32Array(globalsData, uniform('resolution').offset, 2);
+        const time = new Float32Array(globalsData, uniform('time').offset, 1);
+        const globalsBuffer = device.createBuffer({
+          size: globalsSize,
           usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
+        const sampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
 
-        const bindGroup = device.createBindGroup({
-          layout: pipeline.getBindGroupLayout(0),
-          entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-        });
+        let image;
+        let renderGroup;
+        let presentGroup;
+
+        function resize() {
+          const scale = Math.min(devicePixelRatio, 1.5);
+          const width = Math.max(1, Math.round(canvas.clientWidth * scale));
+          const height = Math.max(1, Math.round(canvas.clientHeight * scale));
+          if (image && width === canvas.width && height === canvas.height) return;
+
+          canvas.width = width;
+          canvas.height = height;
+          image?.destroy();
+          image = device.createTexture({
+            size: [width, height],
+            format: 'rgba16float',
+            usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING,
+          });
+          const view = image.createView();
+
+          renderGroup = device.createBindGroup({
+            layout: render.getBindGroupLayout(0),
+            entries: [
+              { binding: globals.binding.index, resource: { buffer: globalsBuffer } },
+              { binding: binding('target'), resource: view },
+            ],
+          });
+          presentGroup = device.createBindGroup({
+            layout: present.getBindGroupLayout(0),
+            entries: [
+              { binding: binding('image'), resource: view },
+              { binding: binding('imageSampler'), resource: sampler },
+            ],
+          });
+        }
 
         addEventListener('resize', resize);
         resize();
 
-        out.textContent = 'a raymarched scene, written in Slang, compiled to WGSL at build time';
+        const [x, y] = entry('compute').workgroupSize;
+        out.textContent = 'raymarched in a Slang compute shader, compiled to WGSL at build time';
 
         requestAnimationFrame(function frame(now) {
-          uniforms[0] = canvas.width;
-          uniforms[1] = canvas.height;
-          uniforms[2] = now / 1000;
-          device.queue.writeBuffer(uniformBuffer, 0, uniforms);
+          resolution.set([canvas.width, canvas.height]);
+          time[0] = now / 1000;
+          device.queue.writeBuffer(globalsBuffer, 0, globalsData);
 
           const encoder = device.createCommandEncoder();
+
+          const compute = encoder.beginComputePass();
+          compute.setPipeline(render);
+          compute.setBindGroup(0, renderGroup);
+          compute.dispatchWorkgroups(Math.ceil(canvas.width / x), Math.ceil(canvas.height / y));
+          compute.end();
+
           const pass = encoder.beginRenderPass({
             colorAttachments: [{ view: context.getCurrentTexture().createView(), loadOp: 'clear', storeOp: 'store' }],
           });
-          pass.setPipeline(pipeline);
-          pass.setBindGroup(0, bindGroup);
+          pass.setPipeline(present);
+          pass.setBindGroup(0, presentGroup);
           pass.draw(3);
           pass.end();
-          device.queue.submit([encoder.finish()]);
 
+          device.queue.submit([encoder.finish()]);
           requestAnimationFrame(frame);
         });
       }

@@ -1,3 +1,3 @@
-export const SLANG_VERSION = '2026.14.1';
+export const SLANG_VERSION = '2026.18.3';
 
-export const SLANG_WASM_SHA256 = 'af339c23a447638be00070ef3d6cd7368c945545f69a86678c564b3bd9b4b06c';
+export const SLANG_WASM_SHA256 = '5618fa09ef0cb18dda4ceed1538cbb35d2ad6b38b33b7841610e2111a659772e';

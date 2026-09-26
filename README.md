@@ -6,7 +6,7 @@
 Compile [Slang](https://shader-slang.org/) shaders to WGSL at build time. Supports Vite, Rollup,
 Rolldown, webpack, Rspack, Rsbuild, esbuild, Farm, Bun and unloader.
 
-Uses Slang 2026.14.1.
+Uses Slang 2026.18.3.
 
 ## Install
 
@@ -98,10 +98,15 @@ Dependencies are watched by supported bundlers, so editing one rebuilds its impo
 
 ```hlsl
 // scene.slang
-import scene.sdf; // scene/sdf.slang
+import scene.march; // scene/march.slang
 
-// scene/sdf.slang
-public float smoothUnion(float a, float b, float k) { /* ... */ }
+// scene/march.slang
+module march;
+__include shapes; // scene/shapes.slang
+
+// scene/shapes.slang
+implementing march;
+public float smoothMin(float a, float b, float k) { /* ... */ }
 ```
 
 Imported symbols should be `public`. Search paths such as `-I` are not supported by the wasm API, so

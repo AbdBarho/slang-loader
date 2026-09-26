@@ -14,6 +14,8 @@ const zipName = `slang-${version}-wasm.zip`;
 const zipUrl = `https://github.com/shader-slang/slang/releases/download/${tag}/${zipName}`;
 const licenseUrl = `https://raw.githubusercontent.com/shader-slang/slang/${tag}/LICENSE`;
 const vendor = join(root, 'vendor');
+const keep = new Set(['slang-wasm.js', 'slang-wasm.wasm', 'interface.d.ts', 'LICENSES', 'third-party-notices']);
+const skip = new Set(['share']);
 
 console.log(`Fetching ${zipUrl}`);
 console.log(`Fetching ${licenseUrl}`);
@@ -27,20 +29,29 @@ if (digest !== sha256) {
   );
 }
 
+const files = unzipSync(zip);
+for (const name of Object.keys(files)) {
+  const top = name.split('/')[0];
+  if (!keep.has(top) && !skip.has(top)) {
+    throw new Error(`Unexpected entry ${name} in ${zipName}. Add ${top} to keep or skip in scripts/fetch-wasm.mjs.`);
+  }
+}
+
 rmSync(vendor, { recursive: true, force: true });
 mkdirSync(vendor, { recursive: true });
 
-const files = unzipSync(zip);
+let written = 1;
 for (const [name, data] of Object.entries(files)) {
-  if (name.endsWith('/')) continue;
+  if (name.endsWith('/') || skip.has(name.split('/')[0])) continue;
   const target = join(vendor, name);
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, data);
+  written++;
 }
 
 writeFileSync(join(vendor, 'SLANG-LICENSE.txt'), license);
 
-console.log(`Wrote ${Object.keys(files).length + 1} files to vendor/ (Slang ${version})`);
+console.log(`Wrote ${written} files to vendor/ (Slang ${version})`);
 
 async function download(url) {
   const response = await fetch(url, { redirect: 'follow' });

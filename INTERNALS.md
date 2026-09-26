@@ -1,7 +1,7 @@
 # Internals
 
 Implementation notes for maintainers and agents. Consumer documentation belongs in `README.md`;
-working instructions belong in `CLAUDE.md`.
+working instructions belong in `AGENTS.md`.
 
 ## Architecture
 
@@ -81,17 +81,20 @@ host path and remain untested for compilation.
 
 ## Verified Wasm Behavior
 
-These facts were verified against Slang 2026.14.1 in August 2026. Re-check load-bearing behavior on
-every version bump because Slang releases frequently and WGSL code generation is still evolving.
+These facts were verified against the pinned Slang version. Re-check load-bearing behavior on every
+version bump because Slang releases frequently and WGSL code generation is still evolving.
 
-- `ProgramLayout.toJsonObject()` exposes full reflection, including `parameters`, `entryPoints` and
-  `bindlessSpaceIndex`.
+- `ProgramLayout.toJsonObject()` exposes full reflection, including `version`, `parameters`,
+  `globalScope`, `entryPoints` and `bindlessSpaceIndex`. Any upstream schema addition changes every
+  generated declaration.
 - `getLastError()` clears after success, so successful compiles can safely collect warnings.
 - Errors use `error[E20001]: ...` followed by `--> /path.slang:LINE:COL`.
 - `getCompileTargets()` returns `{ name, value }` objects. The WGSL numeric value is not stable; look
   it up by name.
 - The required release asset is `slang-<version>-wasm.zip`, containing ESM embind glue and wasm. The
-  `-wasm-libs.zip` asset contains static archives and is not usable here.
+  `-wasm-libs.zip` asset contains static archives and is not usable here. The zip also carries
+  licence folders and an unused `share/`. `fetch-wasm` names every top-level entry as kept or skipped
+  and fails on unknown ones; `LICENSES/` and `third-party-notices/` must always be kept.
 - Emscripten `FS` is exported and is the mechanism for multi-file compilation.
 - `import` crosses a module boundary, and internal symbols do not cross it. Slang's permissive legacy
   mode is deprecated upstream.
