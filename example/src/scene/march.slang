@@ -13,7 +13,7 @@ public struct Ray
     }
 }
 
-public static const float MAX_DISTANCE = 40.0;
+static const float MAX_DISTANCE = 40.0;
 
 [Differentiable]
 float evaluate<S : ISdf>(S sdf, float3 p)

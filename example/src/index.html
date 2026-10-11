@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>slang-loader example</title>
+    <style>
+      body {
+        margin: 0;
+        background: #0b0d12;
+        font:
+          18px/1.6 ui-monospace,
+          monospace;
+        color: #eef2ff;
+      }
+      canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #panel {
+        position: fixed;
+        left: 1rem;
+        bottom: 1rem;
+        padding: 0.6rem 0.9rem;
+        border-radius: 6px;
+        background: rgb(4 6 12 / 65%);
+        border: 1px solid rgb(255 255 255 / 10%);
+        backdrop-filter: blur(6px);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      #panel a {
+        color: #93c5fd;
+      }
+      #message:empty {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <div id="panel">
+      <span id="message"></span>
+      <a id="source" target="_blank">view generated WGSL</a>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

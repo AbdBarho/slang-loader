@@ -6,7 +6,7 @@
 Compile [Slang](https://shader-slang.org/) shaders to WGSL at build time. Supports Vite, Rollup,
 Rolldown, webpack, Rspack, Rsbuild, esbuild, Farm, Bun and unloader.
 
-Uses Slang 2026.18.3.
+Uses Slang 2026.19.
 
 ## Install
 

@@ -11,7 +11,8 @@ SamplerState imageSampler;
 
 static const float3 SUN = normalize(float3(0.6, 0.55, -0.5));
 static const float3 SUN_COLOUR = float3(0.85, 0.7, 0.55);
-static const float3 MOON_COLOURS[3] = {
+static const int MOON_COUNT = 3;
+static const float3 MOON_COLOURS[MOON_COUNT] = {
     float3(1.0, 0.22, 0.06),
     float3(0.06, 0.55, 1.0),
     float3(0.55, 0.12, 1.0),
@@ -63,7 +64,7 @@ struct Scene : ISdf
     Plane ground;
     Twisted<RoundBox> pillar;
     Rotated<Torus> halo;
-    Sphere moons[3];
+    Sphere moons[MOON_COUNT];
 
     __init(float time)
     {
@@ -72,7 +73,7 @@ struct Scene : ISdf
         halo = { { 1.05, 0.06 }, mul(rotationX(time * 0.7), rotationZ(0.5)) };
 
         [ForceUnroll]
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < MOON_COUNT; i++)
         {
             float phase = time * (0.6 + 0.15 * float(i)) + float(i) * 2.094;
             float3 orbit = float3(cos(phase) * 1.55, sin(phase * 1.7) * 0.6, sin(phase) * 1.55);
@@ -88,10 +89,10 @@ struct Scene : ISdf
 
     float glow(float3 p, out int nearest)
     {
-        float best = MAX_DISTANCE;
+        float best = moons[0].distance(p);
         nearest = 0;
         [ForceUnroll]
-        for (int i = 0; i < 3; i++)
+        for (int i = 1; i < MOON_COUNT; i++)
         {
             float d = moons[i].distance(p);
             if (d < best)
@@ -108,7 +109,7 @@ struct Scene : ISdf
     {
         float body = solid(p);
         [ForceUnroll]
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < MOON_COUNT; i++)
             body = smoothMin(body, moons[i].distance(p), 0.35);
         return min(body, ground.distance(p));
     }
@@ -144,7 +145,7 @@ float3 moonLight(Scene scene, float3 p, float3 n)
 {
     float3 light = 0.0;
     [ForceUnroll]
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < MOON_COUNT; i++)
     {
         float3 toMoon = scene.moons[i].center - p;
         float falloff = 1.0 / (1.0 + 3.0 * dot(toMoon, toMoon));
@@ -155,11 +156,13 @@ float3 moonLight(Scene scene, float3 p, float3 n)
 
 float3 lighting(Scene scene, Surface surface, float3 p, float3 n, float3 view)
 {
+    float sunFacing = dot(n, SUN);
+    float halfFacing = dot(n, normalize(SUN - view));
     Ray toSun = { p + n * 0.003, SUN };
-    float shadow = softShadow(scene, toSun, 10.0);
+    float shadow = max(sunFacing, halfFacing) > 0.0 ? softShadow(scene, toSun, 10.0) : 0.0;
     float ao = occlusion(scene, p, n);
-    float diffuse = max(dot(n, SUN), 0.0) * shadow;
-    float specular = pow(max(dot(n, normalize(SUN - view)), 0.0), 80.0) * shadow;
+    float diffuse = max(sunFacing, 0.0) * shadow;
+    float specular = pow(max(halfFacing, 0.0), 80.0) * shadow;
     float3 ambient = sky(n) * 0.5 * ao;
     float3 local = moonLight(scene, p, n) * ao;
 
@@ -246,17 +249,13 @@ struct Varyings
 {
     float4 position : SV_Position;
     float2 uv;
-};
+}
 
 [shader("vertex")]
 Varyings vertexMain(uint id: SV_VertexID)
 {
     float2 corner = float2(float((id << 1) & 2), float(id & 2));
-
-    Varyings out;
-    out.uv = float2(corner.x, 1.0 - corner.y);
-    out.position = float4(corner * 2.0 - 1.0, 0.0, 1.0);
-    return out;
+    return { float4(corner * 2.0 - 1.0, 0.0, 1.0), float2(corner.x, 1.0 - corner.y) };
 }
 
 float3 aces(float3 x)
